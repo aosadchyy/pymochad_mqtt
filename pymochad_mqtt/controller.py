@@ -35,11 +35,13 @@ class PyMochadMqtt(threading.Thread):
         self._mqtt_port=mqtt_port
         self._mqtt_auth=mqtt_auth
         self.parser=parser.X10Parser()
+        self.connect_event = threading.Event()
 
         super().__init__()
 
     def run(self):
         self.ctrl = controller.PyMochad(server=self._mochad_server, port=self._mochad_port)      
+        self.connect_event.set()
         self._ws_listen()
 
     def _ws_listen(self):
@@ -91,7 +93,7 @@ class PyMochadMqtt(threading.Thread):
                                                                message_dict))
                             self._process_message(addr, message_dict, kind)
                 else:
-                    # this section is usually not reached. 
+                    # this section shoudl never be reached. 
                     # read_data() is blocking inside
                     time.sleep(1)
                     continue 
