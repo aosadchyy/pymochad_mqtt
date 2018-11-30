@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="pymochad_mqtt",
-    version="0.8.3",
+    version="0.8.5",
     author="Alex Osadchyy",
     author_email="aosadchyy@outlook.com",
     description="Mochad wrapper in Python with mqtt interface",

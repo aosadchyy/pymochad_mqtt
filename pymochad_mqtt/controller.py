@@ -31,7 +31,7 @@ class PyMochadMqtt(threading.Thread):
                  mqtt_broker='localhost', mqtt_port=1883, mqtt_auth=None):
         self._mochad_server=mochad_server
         self._mochad_port=mochad_port
-        self._mqtt_brocker=mqtt_broker
+        self._mqtt_broker=mqtt_broker
         self._mqtt_port=mqtt_port
         self._mqtt_auth=mqtt_auth
         self.parser=parser.X10Parser()
@@ -116,7 +116,7 @@ class PyMochadMqtt(threading.Thread):
             value=message_dict['func']
         else:
             value=message_dict['event_state']
-        _LOGGER.warning("Publish {} : {} to mqtt".format(topic, value))
+        _LOGGER.debug("Publish {} : {} to mqtt".format(topic, value))
         self._publish(topic, payload)
         # mimic a pulsing nature of a sensor. set to off after on
         if value == 'on':
@@ -124,10 +124,13 @@ class PyMochadMqtt(threading.Thread):
             self._publish(topic, payload.replace("on","off"))
 
     def _publish(self, topic, payload):
-            publish.single(topic, payload=payload, qos=0, retain=False, hostname=self._mqtt_brocker,
-                port=self._mqtt_port, client_id="", keepalive=15, will=None, auth=self._mqtt_auth, tls=None,
-                protocol=mqtt.MQTTv311, transport="tcp")
-
+            try:
+                publish.single(topic, payload=payload, qos=0, retain=False, hostname=self._mqtt_broker,
+                    port=self._mqtt_port, client_id="", keepalive=15, will=None, auth=self._mqtt_auth, tls=None,
+                    protocol=mqtt.MQTTv311, transport="tcp")
+            except Exception as e:
+                _LOGGER.error("Failed to publish mqtt message {}:{}. {}".format(topic,payload,e))
+    
     def disconnect(self):
         """Close the connection to the mochad socket."""
         self.ctrl.socket.close()
