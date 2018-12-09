@@ -22,18 +22,20 @@ class PyMochadMqtt(threading.Thread):
     
     :param str mochad_server: Host running mochad daemon. Defaults to localhost.
     :param int mochad_port: Port to which mochad is binding.Default port is 1099.
+    :param paho.mqtt.client mqtt_client: Client ref if instantiating by instance
     :param str mqtt_broker: Host running mqtt broker. Defaults to localhost.
     :param int mqtt_port: Port to which mqtt is binding.Default port is 1883.
     :param dict mqtt_auth: authentication parameters for the mqtt client
                        {'username':"<username>", 'password':"<password>"}
     """
-    def __init__(self, mochad_server='localhost', mochad_port=1099, 
+    def __init__(self, mochad_server='localhost', mochad_port=1099, mqtt_client=None,
                  mqtt_broker='localhost', mqtt_port=1883, mqtt_auth=None):
         self._mochad_server=mochad_server
         self._mochad_port=mochad_port
         self._mqtt_broker=mqtt_broker
         self._mqtt_port=mqtt_port
         self._mqtt_auth=mqtt_auth
+        self._mqttc=mqtt_client
         self.parser=parser.X10Parser()
         self.connect_event = threading.Event()
 
@@ -124,9 +126,12 @@ class PyMochadMqtt(threading.Thread):
 
     def _publish(self, topic, payload):
             try:
-                publish.single(topic, payload=payload, qos=0, retain=False, hostname=self._mqtt_broker,
-                    port=self._mqtt_port, client_id="", keepalive=15, will=None, auth=self._mqtt_auth, tls=None,
-                    protocol=mqtt.MQTTv311, transport="tcp")
+                if self._mqttc:
+                    self._mqttc.publish(topic=topic, payload=payload, qos=0, retain=False)
+                else:
+                    publish.single(topic, payload=payload, qos=0, retain=False, hostname=self._mqtt_broker,
+                        port=self._mqtt_port, client_id="", keepalive=15, will=None, auth=self._mqtt_auth, tls=None,
+                        protocol=mqtt.MQTTv311, transport="tcp")
             except Exception as e:
                 _LOGGER.error("Failed to publish mqtt message %s:%s. %s", topic, payload, str(e))
     
