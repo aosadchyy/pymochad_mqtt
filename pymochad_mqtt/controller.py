@@ -54,7 +54,7 @@ class PyMochadMqtt(threading.Thread):
                     content = self.ctrl.read_data()
                 except Exception as e:
                     _LOGGER.error(
-                        "Failed to read from the socket. {}".format(e))
+                        "Failed to read from the socket. %s", str(e))
                     if retry_count >= 300:
                         raise Exception(
                             "Retry attempts exceeded. Failed to read for the"
@@ -67,7 +67,7 @@ class PyMochadMqtt(threading.Thread):
                 if content:
                     retry_count = 0
                     for line in content.splitlines():
-                        _LOGGER.debug("Line received: {}".format(line))
+                        _LOGGER.debug("Line received: %s", line)
                         """ Examples of single and multi-lines received
                             10/14 15:02:01 Unknown RF camera command
                             10/14 15:02:01 5D 14 4F 4C A0
@@ -82,15 +82,14 @@ class PyMochadMqtt(threading.Thread):
                                   line.rstrip())
                         except Exception as e:
                             _LOGGER.debug(
-                                  "Failed to parse mochad msg {}: {}".format(
-                                  line, e))
+                                  "Failed to parse mochad msg %s:%s", line, str(e))
                             continue
             
                         # addr/func are blank when nothing to dispatch
                         if addr and message_dict:
                             _LOGGER.debug(
-                                "Future callback {}:{}".format(addr, 
-                                                               message_dict))
+                                "Future callback %s:%s", addr, 
+                                                               message_dict)
                             self._process_message(addr, message_dict, kind)
                 else:
                     # this section shoudl never be reached. 
@@ -98,7 +97,7 @@ class PyMochadMqtt(threading.Thread):
                     time.sleep(1)
                     continue 
         except Exception as e:
-            _LOGGER.error("Failed to read from the socket. {}".format(e))
+            _LOGGER.error("Failed to read from the socket. %s", str(e))
         finally:
             _LOGGER.error("Loop exited. No more X10 msgs will be received.")
             if self.ctrl.socket:
@@ -116,11 +115,11 @@ class PyMochadMqtt(threading.Thread):
             value=message_dict['func']
         else:
             value=message_dict['event_state']
-        _LOGGER.debug("Publish {} : {} to mqtt".format(topic, value))
+        _LOGGER.warning("Publish %s : %s to mqtt", topic, value)
         self._publish(topic, payload)
         # mimic a pulsing nature of a sensor. set to off after on
         if value == 'on':
-            _LOGGER.warning("Publish {} : off to mqtt".format(topic))
+            _LOGGER.debug("Publish %s : off to mqtt", topic)
             self._publish(topic, payload.replace("on","off"))
 
     def _publish(self, topic, payload):
@@ -129,7 +128,7 @@ class PyMochadMqtt(threading.Thread):
                     port=self._mqtt_port, client_id="", keepalive=15, will=None, auth=self._mqtt_auth, tls=None,
                     protocol=mqtt.MQTTv311, transport="tcp")
             except Exception as e:
-                _LOGGER.error("Failed to publish mqtt message {}:{}. {}".format(topic,payload,e))
+                _LOGGER.error("Failed to publish mqtt message %s:%s. %s", topic, payload, str(e))
     
     def disconnect(self):
         """Close the connection to the mochad socket."""
