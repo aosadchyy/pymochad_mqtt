@@ -28,14 +28,14 @@ class PyMochadMqtt(threading.Thread):
     :param dict mqtt_auth: authentication parameters for the mqtt client
                        {'username':"<username>", 'password':"<password>"}
     """
-    def __init__(self, mochad_server='localhost', mochad_port=1099, mqtt_client=None,
+    def __init__(self, mochad_server='localhost', mochad_port=1099, mqtt_pub_callback=None,
                  mqtt_broker='localhost', mqtt_port=1883, mqtt_auth=None):
         self._mochad_server=mochad_server
         self._mochad_port=mochad_port
         self._mqtt_broker=mqtt_broker
         self._mqtt_port=mqtt_port
         self._mqtt_auth=mqtt_auth
-        self._mqttc=mqtt_client
+        self._mqtt_pub_callback=mqtt_pub_callback
         self.parser=parser.X10Parser()
         self.connect_event = threading.Event()
 
@@ -126,8 +126,8 @@ class PyMochadMqtt(threading.Thread):
 
     def _publish(self, topic, payload):
             try:
-                if self._mqttc:
-                    self._mqttc.publish(topic=topic, payload=payload, qos=0, retain=False)
+                if self._mqtt_pub_callback:
+                    self._mqtt_pub_callback(topic=topic, payload=payload, qos=0, retain=False)
                 else:
                     publish.single(topic, payload=payload, qos=0, retain=False, hostname=self._mqtt_broker,
                         port=self._mqtt_port, client_id="", keepalive=15, will=None, auth=self._mqtt_auth, tls=None,
